@@ -1,0 +1,4 @@
+base-devel
+msys2-devel
+mingw-w64-x86_64-toolchain
+git

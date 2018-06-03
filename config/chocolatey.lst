@@ -1,0 +1,21 @@
+vcredist-all
+dotnet4.7
+windows-sdk-10
+
+nodejs.install
+ruby msys2
+python
+strawberryperl
+jdk8
+
+imagemagick
+jpegtran
+curl
+git.install
+yarn
+
+atom
+#notepadplusplus.install
+
+#gimp
+#inkscape
