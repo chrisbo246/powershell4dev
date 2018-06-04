@@ -23,7 +23,7 @@ if (-Not (Get-Command "choco" -errorAction SilentlyContinue)) {
   refreshenv
 }
 
-# Install Windows software.
+# Install Windows softwares.
 Get-Content -ErrorAction SilentlyContinue -Path $ChocolateyList | Foreach {
   choco install $_ -y
 }
