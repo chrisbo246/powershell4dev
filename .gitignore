@@ -1,1 +1,2 @@
-config/custom-project.lst
+config/*
+!config/default

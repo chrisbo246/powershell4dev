@@ -1,23 +1,27 @@
 ﻿[CmdletBinding()]
 param(
+  # Use a custom config directory
+  [parameter(Mandatory = $False, Position = 1)][string]$Config = "default",
   # File containing paths to your local web projects.
-  [parameter(Mandatory = $False, Position=1)][string]$ProjectList = (Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -ChildPath "config\project.lst"),
+  [parameter(Mandatory = $False)][string]$ProjectList = (Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -ChildPath "config\$Config\project.lst"),
+  # Path to pat list verification file.
+  [parameter(Mandatory = $False)][string]$PathList = (Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -ChildPath "config\$Config\path.lst"),
   # Clear cache and force un clean install.
-  [parameter(Mandatory = $False, Position=2)][bool]$force = $False,
+  [parameter(Mandatory = $False)][bool]$force = $False,
   # Skip tasks requiring user input when running as scheduled task.
-  [parameter(Mandatory = $False, Position=3)][bool]$quiet = $False
+  [parameter(Mandatory = $False)][switch]$Quiet
 )
 
 
 $Location = Get-Location
-
+$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
 # chocolatey
 if (Get-Command "choco" -ErrorAction SilentlyContinue) {
 
-  Write-Host "Starting chocolatey packages update." -foreground cyan
+  if ($IsAdmin) {
 
-  if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "Starting of Chocolatey updates." -foreground cyan
 
     # Upgrade chocolatey.
     choco upgrade chocolatey -y
@@ -27,14 +31,20 @@ if (Get-Command "choco" -ErrorAction SilentlyContinue) {
 
   } else {
 
-    # Update chocolatey only if script is not in quiet mode
-    if ($quiet) {
-      Write-Warning "Skipping chocolatey packages update (require password)"
+    #Write-Warning "Skipping Chocolatey updates (require admin privileges)"
+
+    # Update chocolatey only if script is not in quiet mode.
+    if ($Quiet) {
+      Write-Warning "Skipping chocolatey packages update (require user input)"
     } else {
-      Start-Process -FilePath "powershell" -ArgumentList "choco upgrade chocolatey -y; choco upgrade all -y" -Verb RunAs -Wait
+      Start-Process -FilePath "powershell" -ArgumentList "-Command 'choco upgrade chocolatey -y; choco upgrade all -y'" -Verb RunAs -Wait
     }
 
   }
+
+  # Refresh the powershell environment.
+  refreshenv
+  #powershell -NoLogo -NoExit
 
 }
 
@@ -42,7 +52,7 @@ if (Get-Command "choco" -ErrorAction SilentlyContinue) {
 # gem
 if ((Get-Command "gem" -ErrorAction SilentlyContinue)) {
 
-  Write-Host "Starting GEM update." -foreground cyan
+  Write-Host "Starting of GEM updates." -foreground cyan
 
   # If you run into trouble, try to clean cache.
   if ($force) {
@@ -62,10 +72,10 @@ if ((Get-Command "gem" -ErrorAction SilentlyContinue)) {
 
     # Update local projects.
     Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-      if (Test-Path $_) {
+      if ($_ -and (Test-Path $_)) {
         Set-Location $_
         if (Test-Path "Gemfile") {
-          Write-Host "Starting GEM packages update in $_." -foreground cyan
+          Write-Host "Starting of GEM packages update in $_." -foreground cyan
           bundle update
           bundle install
           bundle clean
@@ -74,17 +84,17 @@ if ((Get-Command "gem" -ErrorAction SilentlyContinue)) {
     }
     Set-Location $Location
 
-    # Clean up unused gems
+    # Clean up unused gems.
     bundle clean
 
   } else {
 
     # Update local projects.
     Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-      if (Test-Path $_) {
+      if ($_ -and (Test-Path $_)) {
         Set-Location $_
         if (Test-Path "Gemfile") {
-          Write-Host "Starting GEM packages update in $_." -foreground cyan
+          Write-Host "Starting of GEM packages update in $_." -foreground cyan
           gem update
           gem cleanup
         }
@@ -98,17 +108,17 @@ if ((Get-Command "gem" -ErrorAction SilentlyContinue)) {
 
 
 # pacman
-if (Get-Command "msys2" -ErrorAction SilentlyContinue) {
+if (Get-Command "pacman" -ErrorAction SilentlyContinue) {
 
-  Write-Host "Starting PACMAN packages update." -foreground cyan
+  Write-Host "Starting of PACMAN updates." -foreground cyan
 
-  # Upgrade MSYS2
-  #C:\tools\msys64\msys2.exe update-core
-  Start-Process -FilePath "msys2" -ArgumentList "pacman -Syuu --noconfirm" -Wait
-  Start-Process -FilePath "msys2" -ArgumentList "pacman -Syuu --noconfirm" -Wait
+  # Update MSYS2.
+  pacman -Syuu --noconfirm
+  # Upgrade MSYS2.
+  pacman -Syuu --noconfirm
 
   # Update packages
-  Start-Process -FilePath "msys2" -ArgumentList "pacman -Su --noconfirm" -Wait
+  pacman -Su --noconfirm
 
 }
 
@@ -116,7 +126,7 @@ if (Get-Command "msys2" -ErrorAction SilentlyContinue) {
 # npm
 if (Get-Command "npm" -ErrorAction SilentlyContinue) {
 
-  Write-Host "Starting NPM update." -foreground cyan
+  Write-Host "Starting of NPM updates." -foreground cyan
 
   # If you run into trouble, try to clean cache.
   if ($force) {
@@ -132,20 +142,20 @@ if (Get-Command "npm" -ErrorAction SilentlyContinue) {
   npm install -g npm@latest
 
   # Upgrade globally installed packages.
-  Write-Host "Starting global NPM packages update." -foreground cyan
+  Write-Host "Starting of global NPM packages update." -foreground cyan
   npm update -g
 
   # Update local projects packages.
   Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-    if (Test-Path $_) {
+    if ($_ -and (Test-Path $_)) {
       Set-Location $_
       if (Test-Path "package.json") {
         if ((Get-Command "yarn" -ErrorAction SilentlyContinue) -and (Test-Path "yarn.lock")) {
-          Write-Host "Starting NPM/Bower packages update in $_." -foreground cyan
+          Write-Host "Starting of NPM/Bower packages update in $_." -foreground cyan
           yarn install --latest
           yarn upgrade --latest
         } else {
-          Write-Host "Starting NPM packages update in $_." -foreground cyan
+          Write-Host "Starting of NPM packages update in $_." -foreground cyan
           npm update
         }
       }
@@ -161,15 +171,15 @@ if ((Get-Command "bower" -ErrorAction SilentlyContinue) -or (Get-Command "yarn" 
 
   # Update local projects dependencies.
   Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-    if (Test-Path $_) {
+    if ($_ -and (Test-Path $_)) {
       Set-Location $_
       if (Test-Path "bower.json") {
         if ((Get-Command "yarn" -ErrorAction SilentlyContinue) -and (Test-Path "yarn.lock")) {
-          Write-Host "Starting BOWER packages update (with Yarn) in $_." -foreground cyan
+          Write-Host "Starting of BOWER packages update (with Yarn) in $_." -foreground cyan
           yarn install --latest
           yarn upgrade --latest
         } else {
-          Write-Host "Starting BOWER packages update in $_." -foreground cyan
+          Write-Host "Starting of BOWER packages update in $_." -foreground cyan
           bower update --force-latest --save --save-dev
         }
       }
@@ -180,13 +190,54 @@ if ((Get-Command "bower" -ErrorAction SilentlyContinue) -or (Get-Command "yarn" 
 }
 
 
-# Check paths stored in the path environment variable
-(Get-Childitem Env:Path).value -split ";" | Foreach {
-  if (-not (Test-Path $_)) {
+# Update the Powershell help
+Write-Host "Starting of Powershell help update." -foreground cyan
+Update-Help -ErrorAction "SilentlyContinue"
+
+
+# atom editor
+if (Get-Command "apm" -ErrorAction SilentlyContinue) {
+    # Update installed packages
+    Write-Host "Starting of Atom editor updates." -foreground cyan
+    if (-not $Quiet) {
+      apm upgrade
+    } else {
+      Write-Host "Skipping Atom editor updates (require user input)."
+    }
+}
+
+
+# Check paths stored in the Path environment variable.
+Write-Host "Starting of environment variables verifications." -foreground cyan
+#$RegistredPaths = (Get-Childitem Env:Path).value -Split ";"
+$RegistredPaths = [Environment]::GetEnvironmentVariables("User").Path + ';' + [Environment]::GetEnvironmentVariables("Machine").Path -Split ";"
+$RegistredPaths | Foreach {
+  if ($_ -and -not (Test-Path -IsValid $_)) {
     Write-Warning "$_ is registered in the path environment variable but does not exists."
   }
 }
-
+# Add missing paths to the path environment variable.
+Get-Content -ErrorAction SilentlyContinue -Path $PathList | Foreach {
+  if (Test-Path -IsValid ($_ -ireplace "%USERPROFILE%", $env:userprofile)) {
+    if(($_.StartsWith("%USERPROFILE%")) -or ($_.StartsWith($env:userprofile))) {
+      if ($IsAdmin) {
+        Write-Host "$_ added to the Path user environment variable."
+        [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariables("User").Path + ";" + $_, [System.EnvironmentVariableTarget]::User)
+      } else {
+        Write-Warning "$_ missing in the Path user environment variable."
+      }
+    } else {
+      if ($IsAdmin) {
+        Write-Host "$_ added to the Path system environment variable."
+        [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariables("Machine").Path + ";" + $_, [System.EnvironmentVariableTarget]::Machine)
+      } else {
+        Write-Warning "$_ missing in the Path system environment variable."
+      }
+    }
+  } else {
+    Write-Warning "$_ does not exists."
+  }
+}
 
 # If you run into trouble, try to clean cache.
 #npm cache clean --force ; bundle clean --force
@@ -200,9 +251,9 @@ if ((Get-Command "bower" -ErrorAction SilentlyContinue) -or (Get-Command "yarn" 
 # Upgrade local packages.
 #npm update ; bundle update ; bundle install
 
-# Update environment variables
-refreshenv
-
 # Install app updates without using a Windows Store account (MSA account)
-#Write-Host "Starting Microsoft Store apps update." -foreground cyan
+#Write-Host "Starting of Microsoft Store apps update." -foreground cyan
 #Start ms-windows-store:Updates
+
+# Refresh the powershell environment.
+powershell -NoLogo
