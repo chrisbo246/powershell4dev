@@ -6,7 +6,7 @@ param(
   [parameter(Mandatory = $False)][switch]$Quiet
 )
 
-$Location = Get-Location
+$Location = (Get-Location).Path
 $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
 # Ensure this script is running with admin privileges.
@@ -34,19 +34,9 @@ if (Get-Command "choco" -ErrorAction SilentlyContinue) {
 
 
 # Add missing paths to the path environment variable.
-Get-Content -ErrorAction SilentlyContinue -Path $PathList | Foreach {
-  if (Test-Path -IsValid ($_ -ireplace "%USERPROFILE%", $env:userprofile)) {
-    if(($_.StartsWith("%USERPROFILE%")) -or ($_.StartsWith($env:userprofile))) {
-      Write-Host "$_ added to the Path user environment variable."
-      [Environment]::SetEnvironmentVariable("Path", $env:Path + ";$_", [System.EnvironmentVariableTarget]::User)
-    } else {
-      Write-Host "$_ added to the Path system environment variable."
-      [Environment]::SetEnvironmentVariable("Path", $env:Path + ";$_", [System.EnvironmentVariableTarget]::Machine)
-    }
-  } else {
-    Write-Warning "$_ does not exists."
-  }
-}
+
+& (Join-Path -Path $Location -ChildPath "check-path-env.ps1")
+
 
 
 Set-Location $Location

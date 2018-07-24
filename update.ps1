@@ -13,7 +13,7 @@ param(
 )
 
 
-$Location = Get-Location
+$Location = (Get-Location).Path
 $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
 # chocolatey
@@ -208,36 +208,9 @@ if (Get-Command "apm" -ErrorAction SilentlyContinue) {
 
 
 # Check paths stored in the Path environment variable.
-Write-Host "Starting of environment variables verifications." -foreground cyan
-#$RegistredPaths = (Get-Childitem Env:Path).value -Split ";"
-$RegistredPaths = [Environment]::GetEnvironmentVariables("User").Path + ';' + [Environment]::GetEnvironmentVariables("Machine").Path -Split ";"
-$RegistredPaths | Foreach {
-  if ($_ -and -not (Test-Path -IsValid $_)) {
-    Write-Warning "$_ is registered in the path environment variable but does not exists."
-  }
-}
-# Add missing paths to the path environment variable.
-Get-Content -ErrorAction SilentlyContinue -Path $PathList | Foreach {
-  if (Test-Path -IsValid ($_ -ireplace "%USERPROFILE%", $env:userprofile)) {
-    if(($_.StartsWith("%USERPROFILE%")) -or ($_.StartsWith($env:userprofile))) {
-      if ($IsAdmin) {
-        Write-Host "$_ added to the Path user environment variable."
-        [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariables("User").Path + ";" + $_, [System.EnvironmentVariableTarget]::User)
-      } else {
-        Write-Warning "$_ missing in the Path user environment variable."
-      }
-    } else {
-      if ($IsAdmin) {
-        Write-Host "$_ added to the Path system environment variable."
-        [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariables("Machine").Path + ";" + $_, [System.EnvironmentVariableTarget]::Machine)
-      } else {
-        Write-Warning "$_ missing in the Path system environment variable."
-      }
-    }
-  } else {
-    Write-Warning "$_ does not exists."
-  }
-}
+
+& (Join-Path -Path $Location -ChildPath "check-path-env.ps1")
+
 
 # If you run into trouble, try to clean cache.
 #npm cache clean --force ; bundle clean --force

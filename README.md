@@ -27,3 +27,14 @@ install.ps1 [-Config "custom"]
 ```powershell
 update.ps1 [-Config "custom"]
 ```
+
+
+## Path environment variable verification
+
+- Check the validity of each path registered in both user and system 'Path'.
+- Add paths listed in [config\\path.lst](config/path.lst) to user or system 'Path' if not already present.
+
+
+```powershell
+check-path-env.ps1 [-Config "custom"][-PathList "\custom\path\path.lst"]
+```
