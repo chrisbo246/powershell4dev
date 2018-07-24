@@ -8,7 +8,7 @@
 - Install Node NPM packages listed in [config\\npm.lst](config/npm.lst).
 - Install MSYS2 Pacman packages listed in [config\\pacman.lst](config/pacman.lst).
 - Add paths listed in [config\\path.lst](config/path.lst) to the path environement variable.
-- Install dependencies (NPM, Bower, GEM, etc...) for each project listed in [config\\path.lst](config/project.lst).
+- Install dependencies (NPM, Bower, GEM, etc...) for each project listed in [config\\project.lst](config/project.lst).
 
 ```powershell
 install.ps1 [-Config "custom"]
@@ -21,7 +21,7 @@ install.ps1 [-Config "custom"]
 - Update global NPM packages.
 - Update Packman packages.
 - Update Ruby GEM packages.
-- Update dependencies (NPM, Bower, GEM, etc...) for each project listed in [config\\path.lst](config/project.lst)
+- Update dependencies (NPM, Bower, GEM, etc...) for each project listed in [config\\project.lst](config/project.lst)
 - Check paths listed in the path environement variable.
 
 ```powershell
