@@ -11,7 +11,7 @@
 - Install dependencies (NPM, Bower, GEM, etc...) for each project listed in [config\\project.lst](config/project.lst).
 
 ```powershell
-install.ps1 [-Config "custom"]
+.\install.ps1 [-Config "custom"]
 ```
 
 
@@ -25,7 +25,7 @@ install.ps1 [-Config "custom"]
 - Check paths listed in the path environement variable.
 
 ```powershell
-update.ps1 [-Config "custom"]
+.\update.ps1 [-Config "custom"]
 ```
 
 
@@ -36,5 +36,5 @@ update.ps1 [-Config "custom"]
 
 
 ```powershell
-check-path-env.ps1 [-Config "custom"][-PathList "\custom\path\path.lst"]
+.\check-path-env.ps1 [-Config "custom"][-PathList "\custom\path\path.lst"]
 ```

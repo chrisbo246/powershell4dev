@@ -1,13 +1,18 @@
-#%USERPROFILE%\AppData\Local\GitHubDesktop\bin
-%USERPROFILE%\AppData\Local\atom\bin
+%SYSTEMROOT%\System32\OpenSSH\
+%USERPROFILE%\AppData\Local\GitHubDesktop\bin\
 %USERPROFILE%\AppData\Local\atom\bin\
-%USERPROFILE%\chris\AppData\Roaming\npm
+%USERPROFILE%\AppData\Roaming\npm\
 %USERPROFILE%\nodejs\
+C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\
 C:\Program Files (x86)\Yarn\bin\
-C:\Program Files\Git\cmd
-C:\ProgramData\chocolatey\bin
+C:\Program Files\Common Files\Intel\WirelessCommon\
+C:\Program Files\Git\cmd\
+C:\Program Files\nodejs\
+C:\ProgramData\chocolatey\bin\
 C:\Python36\
 C:\Python36\Scripts\
+C:\Python37\
+C:\Python37\Scripts\
 C:\tools\msys64\
 C:\tools\msys64\usr\bin\
-C:\tools\ruby25\bin
+C:\tools\ruby25\bin\

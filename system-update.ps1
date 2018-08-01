@@ -25,7 +25,7 @@ if (Get-Command "choco" -ErrorAction SilentlyContinue) {
 
   # Upgrade globally installed packages.
   choco upgrade all -y
-
+  
   # Refresh the powershell environment.
   refreshenv
   #powershell -NoLogo -NoExit
