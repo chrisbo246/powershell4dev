@@ -1,21 +1,21 @@
+choco-cleaner
+
 vcredist-all
-dotnet4.7
-windows-sdk-10
+dotnetfx
+windows-sdk-10.1
 
 nodejs.install
-ruby msys2
+ruby
+msys2
 python
 strawberryperl
 jdk8
 
+git.install
 imagemagick
 jpegtran
 curl
-git.install
 yarn
 
 atom
-#notepadplusplus.install
-
-#gimp
-#inkscape
+github-desktop

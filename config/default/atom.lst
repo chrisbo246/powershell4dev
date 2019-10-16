@@ -1,7 +1,10 @@
 ask-stack
 atom-beautify
 atom-css-comb
+atom-material-syntax
+atom-material-ui
 autocomplete-paths
+busy-signal
 color-picker
 emmet
 expose
@@ -10,14 +13,17 @@ git-blame
 git-plus
 git-time-machine
 highlight-selected
+intensions
 jekyll-syntax-highlighting
 language-liquid
 language-markdown
 language-powershell
 linter
 linter-eslint
+linter-liquid
 linter-rubocop
 linter-scss-lint
+linter-ui-default
 minimap
 open-recent
 pane-layout-plus
@@ -26,5 +32,3 @@ project-manager
 remote-edit
 sort-lines
 travis-ci-status
-atom-material-syntax
-atom-material-ui

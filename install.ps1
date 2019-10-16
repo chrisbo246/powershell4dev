@@ -15,13 +15,13 @@ $Location = Get-Location
 $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
 # Ensure this script is running with admin privileges.
-if (-not $IsAdmin) {
+If (-not $IsAdmin) {
   Write-Warning "This script must be executed with administrator privileges."
   Exit
 }
 
 # Install chocolatey (package manager for Windows).
-if (-Not (Get-Command "choco" -errorAction SilentlyContinue)) {
+If (-Not (Get-Command "choco" -errorAction SilentlyContinue)) {
   Set-ExecutionPolicy Bypass -Scope Process -Force
   iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
   refreshenv
@@ -31,10 +31,12 @@ if (-Not (Get-Command "choco" -errorAction SilentlyContinue)) {
 # Install Windows softwares.
 Get-Content -ErrorAction SilentlyContinue -Path $ChocolateyList | Foreach {
   choco install $_ -y
+  refreshenv
 }
+#powershell -NoLogo -NoExit
 
 # Install Atom editor packages.
-if (Get-Command "apm" -errorAction SilentlyContinue) {
+If (Get-Command "apm" -errorAction SilentlyContinue) {
   Get-Content -ErrorAction SilentlyContinue -Path $AtomList | Foreach {
     apm install $_
   }
@@ -47,15 +49,15 @@ refreshenv
 
 # Add missing paths to the path environment variable.
 Get-Content -ErrorAction SilentlyContinue -Path $PathList | Foreach {
-  if (Test-Path -IsValid ($_ -ireplace "%USERPROFILE%", $env:userprofile)) {
+  If (Test-Path -IsValid ($_ -ireplace "%USERPROFILE%", $env:userprofile)) {
     if(($_.StartsWith("%USERPROFILE%")) -or ($_.StartsWith($env:userprofile))) {
       Write-Host "$_ added to the Path user environment variable."
       [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariables("User").Path + ";" + $_, [System.EnvironmentVariableTarget]::User)
-    } else {
+    } Else {
       Write-Host "$_ added to the Path system environment variable."
       [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariables("Machine").Path + ";" + $_, [System.EnvironmentVariableTarget]::Machine)
     }
-  } else {
+  } Else {
     Write-Warning "$_ does not exists."
   }
 }
@@ -64,6 +66,20 @@ Get-Content -ErrorAction SilentlyContinue -Path $PathList | Foreach {
 # Update environment variables.
 refreshenv
 
+#ridk install
+# select 3
+
+# Regenerate GPG key
+#msys2 pacman -Syu haveged
+#msys2 systemctl start haveged
+#msys2 systemctl enable haveged
+##rm -fr /etc/pacman.d/gnupg
+#$gnupgPath = (cygpath -w /etc/pacman.d/gnupg)
+#Remove-Item $gnupgPath -Force -Recurse
+#msys2 pacman-key --init
+#msys2 pacman-key --populate archlinux
+
+
 # Install pacman packages.
 msys2 pacman -Syuu
 Get-Content -ErrorAction SilentlyContinue -Path $PacmanList | Foreach {
@@ -71,8 +87,14 @@ Get-Content -ErrorAction SilentlyContinue -Path $PacmanList | Foreach {
 }
 
 # Install global NPMs.
-Get-Content -ErrorAction SilentlyContinue -Path $NpmList | Foreach {
-  npm install -g $_
+If ((Get-Command "yarn" -ErrorAction SilentlyContinue)) {
+  Get-Content -ErrorAction SilentlyContinue -Path $NpmList | Foreach {
+    yarn global add $_
+  }
+} Else {
+  Get-Content -ErrorAction SilentlyContinue -Path $NpmList | Foreach {
+    npm install -g $_
+  }
 }
 
 # Install GEMs.
@@ -80,24 +102,32 @@ Get-Content -ErrorAction SilentlyContinue -Path $GemList | Foreach {
   gem install $_
 }
 
+# Install Ruby Devkit
+ridk install
+
 # Install local projects dependencies.
 Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-  if (Test-Path $_) {
+  If (Test-Path $_) {
     Set-Location $_
-    if ((Get-Command "yarn" -ErrorAction SilentlyContinue) -and (Test-Path "yarn.lock")) {
+    If ((Get-Command "yarn" -ErrorAction SilentlyContinue) -And ((Test-Path "yarn.lock") -Or (Test-Path "package.json") -Or (Test-Path "bower.json"))) {
       Write-Host "Starting of NPM/Bower packages installation (with Yarn) in $_." -foreground cyan
       yarn install
-    } else {
-      if ((Get-Command "npm" -ErrorAction SilentlyContinue) -and (Test-Path "package.json")) {
+    } Else {
+      If ((Get-Command "npm" -ErrorAction SilentlyContinue) -And (Test-Path "package.json")) {
         Write-Host "Starting of NPM packages installation in $_." -foreground cyan
         npm install
       }
-      if ((Get-Command "bower" -ErrorAction SilentlyContinue) -and (Test-Path "bower.json")) {
+      If ((Get-Command "bower" -ErrorAction SilentlyContinue) -And (Test-Path "bower.json")) {
         Write-Host "Starting of Bower packages installation in $_." -foreground cyan
         bower install
       }
     }
-    if ((Get-Command "gem" -ErrorAction SilentlyContinue) -and (Test-Path "Gemfile")) {
+    If ((Get-Command "bundle" -ErrorAction SilentlyContinue) -And (Test-Path "Gemfile")) {
+      Write-Host "Starting of GEM packages installation in $_ (with Bundler)." -foreground cyan
+      gem install bundler
+      bundle install
+      bundle update
+    } ElseIf ((Get-Command "gem" -ErrorAction SilentlyContinue) -And (Test-Path "Gemfile")) {
       Write-Host "Starting of GEM packages installation in $_." -foreground cyan
       gem install
     }

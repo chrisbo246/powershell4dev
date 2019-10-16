@@ -1,4 +1,7 @@
 bower
+sass
 grunt-cli
 gulp
 yo generator-webapp
+eslint
+typescript

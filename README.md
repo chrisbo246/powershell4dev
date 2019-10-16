@@ -22,18 +22,28 @@
 - Update Packman packages.
 - Update Ruby GEM packages.
 - Update dependencies (NPM, Bower, GEM, etc...) for each project listed in [config\\project.lst](config/project.lst)
-- Check paths listed in the path environement variable.
 
 ```powershell
 .\update.ps1 [-Config "custom"]
 ```
 
+## Cleanup global and local projets dependencies
+
+- Cleanup NPM cache.
+- Cleanup unused Packman packages.
+- Cleanup unused Ruby GEM packages.
+- Cleanup unused dependencies (NPM, Bower, GEM, etc...) for each project listed in [config\\project.lst](config/project.lst)
+- Check paths listed in the path environement variable.
+
+```powershell
+.\cleanup.ps1 [-Config "custom"]
+```
 
 ## Path environment variable verification
 
 - Check the validity of each path registered in both user and system 'Path'.
+- Warn about duplicate entries.
 - Add paths listed in [config\\path.lst](config/path.lst) to user or system 'Path' if not already present.
-
 
 ```powershell
 .\check-path-env.ps1 [-Config "custom"][-PathList "\custom\path\path.lst"]

@@ -6,20 +6,24 @@ param(
   [parameter(Mandatory = $False)][string]$ProjectList = (Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -ChildPath "config\$Config\project.lst"),
   # Path to pat list verification file.
   [parameter(Mandatory = $False)][string]$PathList = (Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -ChildPath "config\$Config\path.lst"),
-  # Clear cache and force un clean install.
-  [parameter(Mandatory = $False)][bool]$force = $False,
   # Skip tasks requiring user input when running as scheduled task.
   [parameter(Mandatory = $False)][switch]$Quiet
 )
 
-
 $Location = (Get-Location).Path
 $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
-# chocolatey
-if (Get-Command "choco" -ErrorAction SilentlyContinue) {
+If ($Quiet) {
+  $VerbosePreference = "SilentlyContinue"
+} Else {
+  $VerbosePreference = "Continue"
+}
+#Write-Verbose ""
 
-  if ($IsAdmin) {
+# chocolatey
+If (Get-Command "choco" -ErrorAction SilentlyContinue) {
+
+  If ($IsAdmin) {
 
     Write-Host "Starting of Chocolatey updates." -foreground cyan
 
@@ -29,15 +33,22 @@ if (Get-Command "choco" -ErrorAction SilentlyContinue) {
     # Upgrade globally installed packages.
     choco upgrade all -y
 
-  } else {
-
-    #Write-Warning "Skipping Chocolatey updates (require admin privileges)"
+  } Else {
 
     # Update chocolatey only if script is not in quiet mode.
-    if ($Quiet) {
-      Write-Warning "Skipping chocolatey packages update (require user input)"
-    } else {
-      Start-Process -FilePath "powershell" -ArgumentList "-Command 'choco upgrade chocolatey -y; choco upgrade all -y'" -Verb RunAs -Wait
+    If ($Quiet) {
+      Write-Verbose "Skipping chocolatey packages update (require user input)"
+    } Else {
+      $Answer = Read-Host 'Chocolatey packages update requires elevated privileges. Do you want to process? (y/N)'
+      Switch -Regex ($Answer) {
+        Y {
+          #Start-Process -FilePath "powershell" -ArgumentList "-NoExit", "choco upgrade chocolatey -y; choco upgrade all -y" -Verb RunAs -Wait
+          Start-Process -FilePath "powershell" -ArgumentList "choco upgrade chocolatey -y; choco upgrade all -y" -Verb RunAs -Wait
+        }
+        default {
+          Write-Verbose "Skipping chocolatey packages update"
+        }
+      }
     }
 
   }
@@ -50,53 +61,41 @@ if (Get-Command "choco" -ErrorAction SilentlyContinue) {
 
 
 # gem
-if ((Get-Command "gem" -ErrorAction SilentlyContinue)) {
+If ((Get-Command "gem" -ErrorAction SilentlyContinue)) {
 
   Write-Host "Starting of GEM updates." -foreground cyan
 
-  # If you run into trouble, try to clean cache.
-  if ($force) {
-    gem cleanup
-  }
-
-  # Upgrade gem.
+  # Update rubygem.
   gem update --system
 
+  # Upgrade installed gems.
+  #gem update
+
   # bundle
-  if (Get-Command "bundle" -ErrorAction SilentlyContinue) {
+  If (Get-Command "bundle" -ErrorAction SilentlyContinue) {
 
-    # If you run into trouble, try to clean cache.
-    if ($force) {
-      bundle clean --force
-    }
-
-    # Update local projects.
+    # Update local projects gems.
     Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-      if ($_ -and (Test-Path $_)) {
+      If ($_ -and (Test-Path $_)) {
         Set-Location $_
-        if (Test-Path "Gemfile") {
+        If (Test-Path "Gemfile") {
           Write-Host "Starting of GEM packages update in $_." -foreground cyan
           bundle update
           bundle install
-          bundle clean
         }
       }
     }
     Set-Location $Location
 
-    # Clean up unused gems.
-    bundle clean
-
-  } else {
+  } Else {
 
     # Update local projects.
     Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-      if ($_ -and (Test-Path $_)) {
+      If ($_ -and (Test-Path $_)) {
         Set-Location $_
-        if (Test-Path "Gemfile") {
+        If (Test-Path "Gemfile") {
           Write-Host "Starting of GEM packages update in $_." -foreground cyan
           gem update
-          gem cleanup
         }
       }
     }
@@ -108,7 +107,7 @@ if ((Get-Command "gem" -ErrorAction SilentlyContinue)) {
 
 
 # pacman
-if (Get-Command "pacman" -ErrorAction SilentlyContinue) {
+If (Get-Command "pacman" -ErrorAction SilentlyContinue) {
 
   Write-Host "Starting of PACMAN updates." -foreground cyan
 
@@ -122,18 +121,42 @@ if (Get-Command "pacman" -ErrorAction SilentlyContinue) {
 
 }
 
+# yarn (NPM/Bower)
+If (Get-Command "yarn" -ErrorAction SilentlyContinue) {
+
+  Write-Host "Starting of NPM/Bower updates." -foreground cyan
+
+  # Upgrade globally installed packages.
+  Write-Host "Starting of global NPM/Bower packages update." -foreground cyan
+  yarn global upgrade --latest
+
+  # Update local projects packages.
+  Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
+    If ($_ -and (Test-Path $_)) {
+      Set-Location $_
+      If ((Test-Path "yarn.lock") -Or (Test-Path "package.json") -Or (Test-Path "bower.json")) {
+        If (-Not (Test-Path "yarn.lock")) {
+          Write-Host "Initializing Yarn in $_." -foreground cyan
+          yarn install --check-files
+        }
+        Write-Host "Starting of NPM/Bower packages update in $_." -foreground cyan
+        yarn upgrade --latest
+      }
+      # ElseIf ((Test-Path "package.json") -Or (Test-Path "bower.json")) {
+      #  Write-Host "Initializing Yarn in $_." -foreground cyan
+      #  yarn install
+      #}
+    }
+  }
+  Set-Location $Location
+
+}
+
 
 # npm
-if (Get-Command "npm" -ErrorAction SilentlyContinue) {
+If ((Get-Command "npm" -ErrorAction SilentlyContinue) -And -Not (Get-Command "yarn" -ErrorAction SilentlyContinue)) {
 
   Write-Host "Starting of NPM updates." -foreground cyan
-
-  # If you run into trouble, try to clean cache.
-  if ($force) {
-    npm cache clean --force
-  } else {
-    npm cache verify
-  }
 
   # Update NPM.
   npm install -g npm
@@ -147,17 +170,11 @@ if (Get-Command "npm" -ErrorAction SilentlyContinue) {
 
   # Update local projects packages.
   Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-    if ($_ -and (Test-Path $_)) {
+    If ($_ -and (Test-Path $_)) {
       Set-Location $_
-      if (Test-Path "package.json") {
-        if ((Get-Command "yarn" -ErrorAction SilentlyContinue) -and (Test-Path "yarn.lock")) {
-          Write-Host "Starting of NPM/Bower packages update in $_." -foreground cyan
-          yarn install --latest
-          yarn upgrade --latest
-        } else {
-          Write-Host "Starting of NPM packages update in $_." -foreground cyan
-          npm update
-        }
+      If (Test-Path "package.json") {
+        Write-Host "Starting of NPM packages update in $_." -foreground cyan
+        npm update
       }
     }
   }
@@ -167,21 +184,15 @@ if (Get-Command "npm" -ErrorAction SilentlyContinue) {
 
 
 # bower
-if ((Get-Command "bower" -ErrorAction SilentlyContinue) -or (Get-Command "yarn" -ErrorAction SilentlyContinue)) {
+If ((Get-Command "bower" -ErrorAction SilentlyContinue) -And -Not (Get-Command "yarn" -ErrorAction SilentlyContinue)) {
 
   # Update local projects dependencies.
   Get-Content -ErrorAction SilentlyContinue -Path $ProjectList | Foreach {
-    if ($_ -and (Test-Path $_)) {
+    If ($_ -and (Test-Path $_)) {
       Set-Location $_
-      if (Test-Path "bower.json") {
-        if ((Get-Command "yarn" -ErrorAction SilentlyContinue) -and (Test-Path "yarn.lock")) {
-          Write-Host "Starting of BOWER packages update (with Yarn) in $_." -foreground cyan
-          yarn install --latest
-          yarn upgrade --latest
-        } else {
-          Write-Host "Starting of BOWER packages update in $_." -foreground cyan
-          bower update --force-latest --save --save-dev
-        }
+      If (Test-Path "bower.json") {
+        Write-Host "Starting of BOWER packages update in $_." -foreground cyan
+        bower update --force-latest --save --save-dev
       }
     }
   }
@@ -196,20 +207,19 @@ Update-Help -ErrorAction "SilentlyContinue"
 
 
 # atom editor
-if (Get-Command "apm" -ErrorAction SilentlyContinue) {
+If (Get-Command "apm" -ErrorAction SilentlyContinue) {
     # Update installed packages
     Write-Host "Starting of Atom editor updates." -foreground cyan
-    if (-not $Quiet) {
-      apm upgrade
-    } else {
-      Write-Host "Skipping Atom editor updates (require user input)."
+    If (-Not $Quiet) {
+      apm upgrade --confirm false
+    } Else {
+      Write-Verbose "Skipping Atom editor updates (require user input)."
     }
 }
 
 
 # Check paths stored in the Path environment variable.
-
-& (Join-Path -Path $Location -ChildPath "check-path-env.ps1")
+#& (Join-Path -Path $Location -ChildPath "check-path-env.ps1")
 
 
 # If you run into trouble, try to clean cache.

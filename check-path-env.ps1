@@ -21,15 +21,15 @@ function Get-RealPath {
     [parameter(Mandatory = $True, Position = 1)][string]$Path
   )
 
-  if ($Path) {
+  If ($Path) {
     # Replace environment variable notations
     $Path = $ExecutionContext.InvokeCommand.ExpandString(($Path -ireplace '%([a-zA-Z0-9]+)%', '${env:$1}'))
   }
-  if ($Path) {
+  If ($Path) {
     # Resolve ~ and *
     $Path = ((Resolve-Path -Path $Path -ErrorAction SilentlyContinue).Path)
   }
-  if ($Path) {
+  If ($Path) {
     # Add trailing backslash for unification
     Join-Path -Path $Path -ChildPath '\'
   }
@@ -39,7 +39,7 @@ function Get-RealPath {
 
 
 
-if (-Not $Quiet) {
+If (-Not $Quiet) {
   Write-Host "Starting of 'Path' environment variable verifications." -foreground cyan
 }
 
@@ -48,16 +48,16 @@ if (-Not $Quiet) {
 $RealRegisteredPaths = @()
 $Paths = (([Environment]::GetEnvironmentVariables("User").Path + ';' + [Environment]::GetEnvironmentVariables("Machine").Path) -Split ';')
 $Paths | % {
-  if ($_) {
+  If ($_) {
     $Path = (Get-RealPath -Path $_)
-    if ($Path) {
+    If ($Path) {
 
       If ($RealRegisteredPaths -Contains $Path) {
 
         # Duplicate path
-        if ($Fix -And $IsAdmin) {
+        If ($Fix -And $IsAdmin) {
           # Remove entry
-          if (-Not $Quiet) {
+          If (-Not $Quiet) {
             Write-Host "$_ entry removed from the 'Path' environment variable."
           }
         } ElseIf (-Not $Quiet) {
@@ -67,19 +67,19 @@ $Paths | % {
       } Else {
 
         # Valid path
-        if (-Not $Quiet) {
+        If (-Not $Quiet) {
           Write-Verbose "$_ is a valid path."
         }
         $RealRegisteredPaths += $Path
 
       }
 
-    } else {
+    } Else {
 
       # Invalid path
-      if ($Fix -And $IsAdmin) {
+      If ($Fix -And $IsAdmin) {
         # Remove entry
-        if (-Not $Quiet) {
+        If (-Not $Quiet) {
           Write-Host "$_ entry removed from the 'Path' environment variable."
         }
       } ElseIf (-Not $Quiet) {
@@ -95,15 +95,15 @@ $Paths | % {
 $RealListedPaths = @()
 $Paths = (Get-Content -ErrorAction SilentlyContinue -Path $PathList)
 $Paths | % {
-  if ($_) {
+  If ($_) {
     $Path = (Get-RealPath -Path $_)
-    if ($Path) {
+    If ($Path) {
       If ($RealListedPaths -Contains $Path) {
 
         # Duplicate path
-        if ($Fix -And $IsAdmin) {
+        If ($Fix -And $IsAdmin) {
           # Remove entry
-          #if (-Not $Quiet) {
+          #If (-Not $Quiet) {
           #	Write-Host "$_ entry removed from $PathList."
           #}
         } ElseIf (-Not $Quiet) {
@@ -113,13 +113,13 @@ $Paths | % {
       } Else {
 
         # Valid path
-        if (-Not $Quiet) {
+        If (-Not $Quiet) {
           Write-Verbose "$_ is a valid path."
         }
 
-        if ($RealRegisteredPaths -Contains $Path) {
+        If ($RealRegisteredPaths -Contains $Path) {
 
-          if (-Not $Quiet) {
+          If (-Not $Quiet) {
             Write-Verbose "$_ found in user or system 'Path' environment variable."
           }
 
@@ -128,15 +128,15 @@ $Paths | % {
           Write-Warning "$_ missing in both user and system 'Path' environment variable."
 
           # Add missing path
-          if ($Fix -And $IsAdmin) {
-            if ($_.StartsWith($env:userprofile)) {
+          If ($Fix -And $IsAdmin) {
+            If ($_.StartsWith($env:userprofile)) {
               [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariables("User").Path + ";" + $_, [System.EnvironmentVariableTarget]::User)
-              if (-Not $Quiet) {
+              If (-Not $Quiet) {
                 Write-Host "$_ added to user 'Path' environment variable."
               }
-            } else {
+            } Else {
               [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariables("Machine").Path + ";" + $_, [System.EnvironmentVariableTarget]::Machine)
-              if (-Not $Quiet) {
+              If (-Not $Quiet) {
                 Write-Host "$_ added to system 'Path' environment variable."
               }
             }
@@ -145,18 +145,18 @@ $Paths | % {
         }
 
       }
-    } else {
+    } Else {
 
       # Invalid path
-      if ($Fix -And $IsAdmin) {
+      If ($Fix -And $IsAdmin) {
         # Remove entry
-        #if (-Not $Quiet) {
+        #If (-Not $Quiet) {
         #	Write-Host "$_ entry removed from $PathList."
         #}
       } ElseIf (-Not $Quiet) {
         Write-Verbose "$_ is listed in $PathList but does not exists."
       }
-      
+
     }
   }
 }

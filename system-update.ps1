@@ -10,13 +10,13 @@ $Location = (Get-Location).Path
 $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
 # Ensure this script is running with admin privileges.
-if (-not $IsAdmin) {
+If (-not $IsAdmin) {
   Write-Warning "This script must be executed with administrator privileges."
   Exit
 }
 
 # chocolatey
-if (Get-Command "choco" -ErrorAction SilentlyContinue) {
+If (Get-Command "choco" -ErrorAction SilentlyContinue) {
 
   Write-Host "Starting of Chocolatey updates." -foreground cyan
 
@@ -25,12 +25,13 @@ if (Get-Command "choco" -ErrorAction SilentlyContinue) {
 
   # Upgrade globally installed packages.
   choco upgrade all -y
-  
+
   # Refresh the powershell environment.
   refreshenv
   #powershell -NoLogo -NoExit
 
 }
+
 
 
 # Add missing paths to the path environment variable.
